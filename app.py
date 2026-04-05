@@ -5,7 +5,8 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    messages = crypto.list_messages()
+    return render_template("index.html", messages=messages)
 
 @app.route("/api/encrypt", methods=["POST"])
 def encrypt():
