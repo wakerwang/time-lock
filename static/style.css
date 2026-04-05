@@ -288,6 +288,12 @@ header h1 {
     font-size: 0.8rem;
 }
 
+.message-table th:nth-child(5),
+.message-table td:nth-child(5) {
+    width: 100px;
+    text-align: center;
+}
+
 .status {
     padding: 4px 10px;
     border-radius: 20px;
