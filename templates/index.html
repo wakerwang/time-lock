@@ -22,6 +22,10 @@
         <div id="encrypt-tab" class="tab-content active">
             <form id="encrypt-form">
                 <div class="form-group">
+                    <label for="name">留言人</label>
+                    <input type="text" id="name" name="name" placeholder="你的名字（可选）">
+                </div>
+                <div class="form-group">
                     <label for="content">加密内容</label>
                     <textarea id="content" name="content" placeholder="输入你想加密的话..." rows="4" required></textarea>
                 </div>
@@ -90,6 +94,7 @@
                 <table class="message-table">
                     <thead>
                         <tr>
+                            <th>留言人</th>
                             <th>消息ID</th>
                             <th>创建时间</th>
                             <th>解锁日期</th>
@@ -100,6 +105,7 @@
                     <tbody>
                         {% for msg in messages %}
                         <tr>
+                            <td>{{ msg.name or '-' }}</td>
                             <td><code>{{ msg.id }}</code></td>
                             <td>{{ msg.created_at }}</td>
                             <td>{{ msg.unlock_date }}</td>
@@ -139,6 +145,7 @@
         // Encrypt form
         document.getElementById('encrypt-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const name = document.getElementById('name').value;
             const content = document.getElementById('content').value;
             const unlockDate = document.getElementById('unlock-date').value;
             const password = document.getElementById('encrypt-password').value;
@@ -152,7 +159,7 @@
                 const response = await fetch('/api/encrypt', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({content, unlock_date: unlockDate, password})
+                    body: JSON.stringify({name, content, unlock_date: unlockDate, password})
                 });
                 const data = await response.json();
 

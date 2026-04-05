@@ -32,7 +32,7 @@ def _save_data(data: dict):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def encrypt_message(content: str, unlock_date: str, password: str) -> dict:
+def encrypt_message(content: str, unlock_date: str, password: str, name: str = "") -> dict:
     """
     加密消息并存储。
     unlock_date 格式: YYYYMMDD
@@ -52,6 +52,7 @@ def encrypt_message(content: str, unlock_date: str, password: str) -> dict:
         "salt": base64.b64encode(salt).decode("utf-8"),
         "unlock_date": unlock_date,
         "created_at": created_at,
+        "name": name,
     }
     _save_data(data)
 
@@ -107,6 +108,7 @@ def list_messages() -> list:
         is_unlocked = now >= unlock_date
         result.append({
             "id": msg_id,
+            "name": msg.get("name", ""),
             "unlock_date": msg["unlock_date"],
             "created_at": msg["created_at"],
             "is_unlocked": is_unlocked,

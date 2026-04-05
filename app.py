@@ -10,7 +10,12 @@ def index():
 @app.route("/api/encrypt", methods=["POST"])
 def encrypt():
     data = request.json
-    result = crypto.encrypt_message(data["content"], data["unlock_date"], data["password"])
+    result = crypto.encrypt_message(
+        data["content"], 
+        data["unlock_date"], 
+        data["password"],
+        data.get("name", "")
+    )
     return jsonify(result)
 
 @app.route("/api/decrypt", methods=["POST"])
