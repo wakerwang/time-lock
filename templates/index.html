@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>时间锁加密</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⏳ 时间锁加密</h1>
+            <p class="subtitle">输入一段话和一个未来日期，内容将被加密锁定。时间到了才能解锁查看。</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="encrypt">加密存储</button>
+            <button class="tab" data-tab="decrypt">解锁查看</button>
+            <button class="tab" data-tab="list">消息列表</button>
+        </div>
+
+        <div id="encrypt-tab" class="tab-content active">
+            <form id="encrypt-form">
+                <div class="form-group">
+                    <label for="content">加密内容</label>
+                    <textarea id="content" name="content" placeholder="输入你想加密的话..." rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="unlock-date">解锁日期 (YYYYMMDD)</label>
+                    <input type="text" id="unlock-date" name="unlock_date" placeholder="例如: 20261225" pattern="[0-9]{8}" required>
+                    <small>格式: YYYYMMDD，例如 20261225 表示 2026年12月25日</small>
+                </div>
+                <div class="form-group">
+                    <label for="encrypt-password">解锁密码</label>
+                    <input type="password" id="encrypt-password" name="password" placeholder="设置一个密码，用于解锁" required>
+                </div>
+                <button type="submit" class="btn btn-primary">加密并存储</button>
+            </form>
+            <div id="encrypt-result" class="result hidden">
+                <div class="result-success">
+                    <span class="icon">✅</span>
+                    <p>加密成功！</p>
+                    <p>消息ID: <code id="result-id"></code></p>
+                    <p>解锁日期: <span id="result-date"></span></p>
+                    <p>创建时间: <span id="result-time"></span></p>
+                </div>
+            </div>
+            <div id="encrypt-error" class="result error hidden">
+                <span class="icon">❌</span>
+                <p id="error-msg"></p>
+            </div>
+        </div>
+
+        <div id="decrypt-tab" class="tab-content">
+            <form id="decrypt-form">
+                <div class="form-group">
+                    <label for="decrypt-message-id">消息ID</label>
+                    <input type="text" id="decrypt-message-id" name="message_id" placeholder="输入消息ID" required>
+                </div>
+                <div class="form-group">
+                    <label for="decrypt-password">解锁密码</label>
+                    <input type="password" id="decrypt-password" name="password" placeholder="输入解锁密码" required>
+                </div>
+                <button type="submit" class="btn btn-primary">解锁查看</button>
+            </form>
+            <div id="decrypt-result" class="result hidden">
+                <div id="decrypt-locked" class="hidden">
+                    <span class="icon">🔒</span>
+                    <p class="locked-title">内容尚未解锁</p>
+                    <p>剩余时间: <strong id="remaining-time"></strong></p>
+                    <p>解锁日期: <span id="unlock-date-display"></span></p>
+                    <p class="hint">无论怎么运行，在解锁日期之前都无法查看内容。</p>
+                </div>
+                <div id="decrypt-unlocked" class="hidden">
+                    <span class="icon">🔓</span>
+                    <p class="unlocked-title">内容已解锁！</p>
+                    <div class="decrypted-content" id="decrypted-content"></div>
+                    <p class="created-at">创建时间: <span id="decrypted-created-at"></span></p>
+                </div>
+                <div id="decrypt-error" class="hidden">
+                    <span class="icon">❌</span>
+                    <p id="decrypt-error-msg"></p>
+                </div>
+            </div>
+        </div>
+
+        <div id="list-tab" class="tab-content">
+            <div id="message-list">
+                {% if messages %}
+                <table class="message-table">
+                    <thead>
+                        <tr>
+                            <th>消息ID</th>
+                            <th>创建时间</th>
+                            <th>解锁日期</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for msg in messages %}
+                        <tr>
+                            <td><code>{{ msg.id }}</code></td>
+                            <td>{{ msg.created_at }}</td>
+                            <td>{{ msg.unlock_date }}</td>
+                            <td>
+                                {% if msg.is_unlocked %}
+                                <span class="status unlocked">已解锁</span>
+                                {% else %}
+                                <span class="status locked">未解锁</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-small btn-copy" onclick="copyId('{{ msg.id }}')">复制ID</button>
+                                <button class="btn btn-small btn-delete" onclick="deleteMessage('{{ msg.id }}')">删除</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="empty-list">暂无消息</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+            });
+        });
+
+        // Encrypt form
+        document.getElementById('encrypt-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const content = document.getElementById('content').value;
+            const unlockDate = document.getElementById('unlock-date').value;
+            const password = document.getElementById('encrypt-password').value;
+
+            const resultDiv = document.getElementById('encrypt-result');
+            const errorDiv = document.getElementById('encrypt-error');
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/encrypt', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({content, unlock_date: unlockDate, password})
+                });
+                const data = await response.json();
+
+                if (data.id) {
+                    document.getElementById('result-id').textContent = data.id;
+                    document.getElementById('result-date').textContent = data.unlock_date;
+                    document.getElementById('result-time').textContent = data.created_at;
+                    resultDiv.classList.remove('hidden');
+                    document.getElementById('encrypt-form').reset();
+                } else {
+                    document.getElementById('error-msg').textContent = data.error || data.message || '加密失败';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (err) {
+                document.getElementById('error-msg').textContent = '请求失败: ' + err.message;
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        // Decrypt form
+        document.getElementById('decrypt-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const messageId = document.getElementById('decrypt-message-id').value;
+            const password = document.getElementById('decrypt-password').value;
+
+            const resultDiv = document.getElementById('decrypt-result');
+            const lockedDiv = document.getElementById('decrypt-locked');
+            const unlockedDiv = document.getElementById('decrypt-unlocked');
+            const errorDiv = document.getElementById('decrypt-error');
+            resultDiv.classList.remove('hidden');
+            lockedDiv.classList.add('hidden');
+            unlockedDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/decrypt', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id: messageId, password})
+                });
+                const data = await response.json();
+
+                if (data.status === 'locked') {
+                    document.getElementById('remaining-time').textContent = data.remaining;
+                    document.getElementById('unlock-date-display').textContent = data.unlock_date;
+                    lockedDiv.classList.remove('hidden');
+                } else if (data.status === 'unlocked') {
+                    document.getElementById('decrypted-content').textContent = data.content;
+                    document.getElementById('decrypted-created-at').textContent = data.created_at;
+                    unlockedDiv.classList.remove('hidden');
+                } else {
+                    document.getElementById('decrypt-error-msg').textContent = data.message;
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (err) {
+                document.getElementById('decrypt-error-msg').textContent = '请求失败: ' + err.message;
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        function copyId(id) {
+            navigator.clipboard.writeText(id).then(() => {
+                alert('已复制: ' + id);
+            });
+        }
+
+        async function deleteMessage(id) {
+            if (!confirm('确定要删除此消息吗？')) return;
+            try {
+                const response = await fetch('/api/delete/' + id, {method: 'DELETE'});
+                if (response.ok) {
+                    location.reload();
+                }
+            } catch (err) {
+                alert('删除失败: ' + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
