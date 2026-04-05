@@ -6,5 +6,10 @@
   "deploy": {
     "numReplicas": 1,
     "restartPolicyType": "ON_FAILURE"
+  },
+  "volumes": {
+    "data": {
+      "mountPath": "/app/data"
+    }
   }
 }
