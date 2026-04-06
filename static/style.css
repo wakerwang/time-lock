@@ -321,21 +321,74 @@ header h1 {
     padding: 40px 0;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+        width: 100%;
+    }
+
     header h1 {
-        font-size: 1.8rem;
+        font-size: 1.6rem;
+    }
+
+    .subtitle {
+        font-size: 0.9rem;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+    }
+
+    .tab {
+        flex: 1;
+        min-width: 80px;
+        padding: 10px 5px;
+        font-size: 0.85rem;
     }
 
     .tab-content {
         padding: 15px;
     }
 
+    .form-group input,
+    .form-group textarea {
+        font-size: 16px;
+        padding: 10px 12px;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        font-size: 1rem;
+    }
+
     .message-table {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
+        display: block;
+        overflow-x: auto;
     }
 
     .message-table th,
     .message-table td {
-        padding: 8px 10px;
+        padding: 6px 8px;
+        white-space: nowrap;
+    }
+
+    .btn-small {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+
+    .status {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+    }
+
+    .result {
+        padding: 15px;
+    }
+
+    #encrypt-tab, #decrypt-tab, #list-tab {
+        width: 100%;
     }
 }
